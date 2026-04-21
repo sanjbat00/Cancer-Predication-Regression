@@ -1,0 +1,53 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import r2_score, mean_squared_error
+
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+
+# preprocessing
+# Try loading the dataset
+df = pd.read_csv('cancer_reg.csv')
+
+# Basic preprocessing
+
+df = df.fillna(df.median(numeric_only=True))
+df = df.drop(columns=['binnedinc', 'geography'], errors='ignore')
+
+X = df.drop('target_deathrate', axis=1)
+y = df['target_deathrate']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+models = {
+    "Linear Regression": LinearRegression(),
+    "Ridge": Ridge(),
+    "Lasso": Lasso(),
+    "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42),
+    "Gradient Boosting": GradientBoostingRegressor(random_state=42)
+}
+
+results = []
+
+for name, model in models.items():
+    if name in ["Linear Regression", "Ridge", "Lasso"]:
+        model.fit(X_train_scaled, y_train)
+        preds = model.predict(X_test_scaled)
+    else:
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+    
+    r2 = r2_score(y_test, preds)
+    rmse = np.sqrt(mean_squared_error(y_test, preds))
+    
+    results.append((name, r2, rmse))
+
+import pandas as pd
+results_df = pd.DataFrame(results, columns=["Model", "R2 Score", "RMSE"])
+results_df
